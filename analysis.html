@@ -1,0 +1,9 @@
+here is the steps I took:
+identify the dependent variable Y which is classe
+delete all the variables contains missing data
+use corr() and linear regresion to see which variables are related to classe
+subset to train test and cross-validation
+use training set to bulit tree and gbm models
+predict on cross-validation set to test which one is better
+choice gbm model and then predict on testing set
+the accuarcy is great, but it is slow. so may need to use PCA to preprocess the data to reduce the variables(x)
