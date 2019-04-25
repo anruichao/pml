@@ -1,0 +1,87 @@
+---
+title: "pml project"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## GitHub Documents
+
+This is an R Markdown format used for publishing markdown documents to GitHub. When you click the **Knit** button all R code chunks are run and a markdown file (.md) suitable for publishing to GitHub is generated.
+
+## Including Code
+
+You can include R code in the document as follows:
+
+```{r}
+MyData <- read.csv(file="pml.csv")
+dim(MyData)
+str(MyData)
+head(MyData)
+summary(MyData)
+table(is.na(MyData))
+colSums(is.na(MyData))
+library(dplyr)
+library(ggplot2)
+##remove N/A
+train<- MyData[ , colSums(is.na(MyData)) == 0]
+train$classe<- as.numeric(train$classe)
+str(train)
+summary(train)
+#subset<-   roll_belt        pitch_belt          yaw_belt       total_accel_belt   gyros_belt_x        gyros_belt_y       gyros_belt_z      accel_belt_x 
+#accel_belt_y     accel_belt_z  roll_arm         pitch_arm   magnet_belt_x   magnet_belt_y   magnet_belt_z     
+#yaw_arm          total_accel_arm  gyros_arm_x        gyros_arm_y       gyros_arm_z       
+a<-select_if(train, is.numeric)
+str(a)
+summary(a)
+a <- a[-(1)]
+model<- lm(classe~. ,data = a)
+summary(model)
+#select Coefficients ***
+b<-subset(a, select=-c(raw_timestamp_part_2,num_window,gyros_belt_x,magnet_belt_x,roll_arm,gyros_arm_z,accel_dumbbell_z,yaw_forearm,gyros_forearm_y,gyros_forearm_z,magnet_forearm_z))
+#b cut to training testing cross
+library(caret)
+intrain<-createDataPartition(y=b$classe,p=0.7,list=FALSE)
+training<-b[intrain,]
+testing<-b[-intrain,]
+test<-testing
+crossv<-createDataPartition(y=test$classe,p=0.5,list=FALSE)
+testing<-test[crossv,]
+crossing<-test[-crossv,]
+training$classe<- as.factor(training$classe)
+#train with rf
+set.seed(0215)
+mod1<-train(classe~.,method="rpart",data = training)
+#predict on test
+crossing$classe<- as.factor(crossing$classe)
+pred1 <- predict(mod1,crossing)
+pred1df<-data.frame(pred1,crossing$classe)
+summary(pred1df)
+table(pred1df$pred1,crossing$classe)
+#0.49
+mod2<-train(classe~.,method="gbm",data = training)
+pred2 <- predict(mod2,crossing)
+pred2df<-data.frame(pred2,crossing$classe)
+summary(pred2df)
+table(pred2df$pred2,crossing$classe)
+#0.99 test accuacry
+#use mod 2 to predict testing
+testing1<-testing[,1:44]
+predt <- predict(mod2,testing1)
+predtdf<-data.frame(predt,testing$classe)
+summary(predtdf)
+table(predtdf$predt,testing$classe)
+#0.99 out sample accuacry
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
